@@ -17,6 +17,18 @@ for cmd in yq python3 docker; do
     fi
 done
 
+if ! docker buildx version &> /dev/null; then
+    echo "Error: Docker Buildx is not installed. Please install it before proceeding."
+    exit 1
+fi
+
+# Ensure a Buildx builder exists
+if ! docker buildx ls | grep -q '\*'; then
+    echo "No active Buildx builder found. Creating ros-cuda-builder."
+    docker buildx create --name ros-cuda-builder --use
+    docker buildx inspect --bootstrap
+fi
+
 
 # Validate configuration
 CONFIG_FILE="ros-versions.yaml"

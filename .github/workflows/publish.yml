@@ -18,6 +18,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Free Up Disk Space
+        run: |
+          echo "Freeing up runner disk space..."
+          sudo apt-get clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/share/dotnet
+          docker system prune -af --volumes
+          df -h
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -43,13 +53,15 @@ jobs:
           DOCKER_CACHE_FROM="/tmp/.buildx-cache" \
           DOCKER_CACHE_TO="/tmp/.buildx-cache-new" \
           IMAGE_NAME=$(bash ./build_image.sh "${{ matrix.ros }}" "${{ matrix.cuda }}" | tail -n 1)
-          if [ $? -ne 0 ]; then
+          if [ $? -eq 0 ]; then
             echo "Pushing image: $IMAGE_NAME"
             docker push $IMAGE_NAME
+          else
+            exit 1
           fi
 
       - name: Clean Up Docker Resources
-        run: docker system prune -af
+        run: docker system prune -af --volumes
 
       - name: Update Cache After Build
         run: |
