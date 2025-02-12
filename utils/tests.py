@@ -1,5 +1,5 @@
 import unittest
-from version_selector import VersionSelector
+from version_selector import VersionSelector, ImageNotFoundError
 
 
 class TestBaseImage(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestBaseImage(unittest.TestCase):
             self.selector.determine_base_image("12", None)
         with self.assertRaises(ValueError):
             self.selector.determine_base_image("abcd", None)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImageNotFoundError):
             self.selector.determine_base_image("1222.1222", None)
 
     def test_invalid_ros(self):
