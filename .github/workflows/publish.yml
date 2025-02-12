@@ -38,12 +38,8 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME=$(bash ./build_image.sh "${{ matrix.ros }}" "${{ matrix.cuda }}" | tail -n 1)
-          if [ -n "$IMAGE_NAME" ]; then
-            echo "Building image: $IMAGE_NAME"
-            docker build \
-              --cache-from=type=local,src=/tmp/.buildx-cache \
-              --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-              -t $IMAGE_NAME .
+          if [ $? -ne 0 ]; then
+            echo "Pushing image: $IMAGE_NAME"
             docker push $IMAGE_NAME
           fi
 

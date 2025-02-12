@@ -60,7 +60,7 @@ echo "Using CUDA version: ${DOCKER_CUDA_VERSION:-None}"
 
 if [ -z "$DOCKER_CUDA_VERSION" ] && [ -z "$ROS_DISTRO" ]; then
     echo "Error: Neither ROS distribution nor CUDA version specified. Skipping build."
-    exit 0
+    exit 1
 fi
 
 
@@ -71,7 +71,7 @@ EXIT_CODE=$?
 set -e
 if [ $EXIT_CODE -ne 0 ] || [ -z "$BASE_IMAGE" ]; then
     echo "No valid base image found for ROS $ROS_DISTRO and CUDA $DOCKER_CUDA_VERSION. Aborting."
-    exit 0
+    exit 1
 fi
 echo "Using base image: $BASE_IMAGE"
 
