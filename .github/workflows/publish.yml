@@ -35,6 +35,7 @@ jobs:
       - name: Build and Push Docker Images
         run: |
           for CUDA_VERSION in "${{ join(matrix.cuda, ' ') }}"; do
+            echo "Using parameters ${{ matrix.ros }} $CUDA_VERSION"
             IMAGE_NAME=$(bash ./build_image.sh "${{ matrix.ros }}" "$CUDA_VERSION" | tail -n 1)
             if [ -n "$IMAGE_NAME" ]; then
               echo "Pushing image: $IMAGE_NAME"
