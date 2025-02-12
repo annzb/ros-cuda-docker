@@ -70,7 +70,7 @@ echo "Using base image: $BASE_IMAGE"
 # Construct image name
 UBUNTU_VERSION=$(echo "$BASE_IMAGE" | grep -oP "ubuntu:?\K[0-9]+\.[0-9]+" || true)
 UBUNTU_VERSION=${UBUNTU_VERSION:-""}
-OS_IMAGE_NAME="ubuntu:${UBUNTU_VERSION:-latest}"
+OS_IMAGE_NAME="annazabnus/ros-cuda:${UBUNTU_VERSION:-latest}"
 [ -n "$DOCKER_CUDA_VERSION" ] && OS_IMAGE_NAME+="-cuda$DOCKER_CUDA_VERSION"
 [ -n "$ROS_DISTRO" ] && OS_IMAGE_NAME+="-$ROS_DISTRO"
 echo "Building OS image: $OS_IMAGE_NAME"
