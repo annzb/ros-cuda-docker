@@ -63,7 +63,7 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           DOCKER_BUILDKIT=1 \
-          PUSH_IMAGES=true \
+          DOCKER_PUSH_IMAGES=true \
           DOCKER_CACHE_FROM="/tmp/.buildx-cache" \
           DOCKER_CACHE_TO="/tmp/.buildx-cache-new" \
           python3 build.py --ros "${{ matrix.ros }}" --cuda "${{ matrix.cuda }}"
