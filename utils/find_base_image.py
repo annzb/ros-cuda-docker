@@ -23,7 +23,7 @@ class ImageSelector:
             return None
 
         if not re.match(r"^\d+\.\d+$", cuda_version):
-            sys.exit("Error: CUDA version must be in the format 'X.Y' where X and Y are numeric.")
+            raise ValueError("Error: CUDA version must be in the format 'X.Y' where X and Y are numeric.")
 
         return cuda_version
 
@@ -32,14 +32,14 @@ class ImageSelector:
         """
         Load ROS configuration from the YAML file.
         """
-        try:
-            with open(ROS_VERSIONS_FILE, 'r') as file:
-                data = yaml.safe_load(file)
-                return {None if k == 'default' else k: v for k, v in data.get('ros_versions', {}).items()}
-        except FileNotFoundError:
-            sys.exit(f"Error: Configuration file {ROS_VERSIONS_FILE} not found.")
-        except yaml.YAMLError as e:
-            sys.exit(f"Error parsing YAML file: {e}")
+        # try:
+        with open(ROS_VERSIONS_FILE, 'r') as file:
+            data = yaml.safe_load(file)
+            return {None if k == 'default' else k: v for k, v in data.get('ros_versions', {}).items()}
+        # except FileNotFoundError:
+        #     sys.exit(f"Error: Configuration file {ROS_VERSIONS_FILE} not found.", status=1)
+        # except yaml.YAMLError as e:
+        #     sys.exit(f"Error parsing YAML file: {e}")
 
     def determine_base_image(self):
         """
@@ -47,7 +47,7 @@ class ImageSelector:
         """
         if self.ros_version not in self.ros_config:
             available_versions = ", ".join(str(v) for v in self.ros_config.keys())
-            sys.exit(f"Error: ROS version must be one of the following: {available_versions}, not {self.ros_version}")
+            raise ValueError(f"Error: ROS version must be one of the following: {available_versions}, not {self.ros_version}")
 
         ubuntu_version = self.ros_config[self.ros_version]['ubuntu']
 
@@ -87,12 +87,12 @@ class ImageSelector:
                 base_url = data.get("next")
 
         except requests.RequestException as e:
-            sys.exit(f"Error fetching CUDA tags: {e}")
+            raise ValueError(f"Error fetching CUDA tags: {e}")
 
         if latest_patch:
             return latest_patch
         else:
-            sys.exit(f"No matching CUDA image found for version {self.cuda_version}")
+            raise ValueError(f"No matching CUDA image found for version {self.cuda_version}")
 
 
 

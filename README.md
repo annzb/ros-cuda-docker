@@ -88,7 +88,7 @@ Each image includes the following major libraries and tools:
 
 ## Auto-selection of Base Images
 
-For CUDA builds, base images are **dynamically pulled** from the official **[NVIDIA DockerHub](https://hub.docker.com/r/nvidia/cuda)** repository. The selection process:
+For CUDA builds, base images are **dynamically pulled** from the official **[NVIDIA DockerHub](https://hub.docker.com/repository/docker/annazabnus/ros-cuda)** repository. The selection process:
 
 - Targets `base` and `devel` images, while ignoring `runtime` images.
 - Automatically selects the **latest** compatible tag based on the requested CUDA version and Ubuntu release.

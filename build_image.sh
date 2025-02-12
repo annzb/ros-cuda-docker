@@ -65,8 +65,11 @@ fi
 
 
 # Set base image
+set +e
 BASE_IMAGE=$(python3 "$PYTHON_SCRIPT" --cuda "$DOCKER_CUDA_VERSION" --ros "$ROS_DISTRO")
-if [ -z "$BASE_IMAGE" ]; then
+EXIT_CODE=$?
+set -e
+if [ $EXIT_CODE -ne 0 ] || [ -z "$BASE_IMAGE" ]; then
     echo "No valid base image found for ROS $ROS_DISTRO and CUDA $DOCKER_CUDA_VERSION. Aborting."
     exit 0
 fi
