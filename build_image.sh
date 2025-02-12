@@ -89,9 +89,16 @@ echo "Building image: $OS_IMAGE_NAME"
 
 
 # Build image
-docker build \
+CACHE_FROM_DIR="${DOCKER_CACHE_FROM:-/tmp/.buildx-cache}"
+CACHE_TO_DIR="${DOCKER_CACHE_TO:-/tmp/.buildx-cache-new}"
+
+DOCKER_BUILDKIT=1 docker buildx build \
     --build-arg BASE_IMAGE="$BASE_IMAGE" \
     --build-arg ROS_DISTRO="$ROS_DISTRO" \
-    -t "$OS_IMAGE_NAME" .
+    --cache-from=type=local,src="$CACHE_FROM_DIR" \
+    --cache-to=type=local,dest="$CACHE_TO_DIR",mode=max \
+    -t "$OS_IMAGE_NAME" \
+    --load \
+    .
 
 echo "$OS_IMAGE_NAME"
