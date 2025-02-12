@@ -34,7 +34,8 @@ jobs:
 
       - name: Build and Push Docker Images
         run: |
-          for CUDA_VERSION in "${{ join(matrix.cuda, ' ') }}"; do
+          CUDA_VERSIONS=$(echo '${{ toJSON(matrix.cuda) }}' | jq -r '.[]')
+          for CUDA_VERSION in $CUDA_VERSIONS; do
             echo "Using parameters ${{ matrix.ros }} $CUDA_VERSION"
             IMAGE_NAME=$(bash ./build_image.sh "${{ matrix.ros }}" "$CUDA_VERSION" | tail -n 1)
             if [ -n "$IMAGE_NAME" ]; then
