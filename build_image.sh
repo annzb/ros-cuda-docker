@@ -1,15 +1,15 @@
 #!/bin/bash
 
+
 set -euo pipefail
 
 
 # Check dependencies
-for cmd in yq nvcc python3 docker; do
+for cmd in yq python3 docker; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: $cmd is not installed."
         case $cmd in
             yq) echo "Please run 'apt install yq'";;
-            nvcc) echo "Please install the NVIDIA CUDA Toolkit.";;
             python3) echo "Please install Python 3.";;
             docker) echo "Please install Docker.";;
         esac
@@ -34,17 +34,27 @@ fi
 # Set ROS distribution
 AVAILABLE_ROS_DISTROS=$(yq '.ros_versions | keys | map(select(. != "default")) | join(" ")' "$CONFIG_FILE")
 ROS_DISTRO="${1:-}"
-if [ -n "$ROS_DISTRO" ] && ! yq -e ".ros_versions | has(\"$ROS_DISTRO\")" "$CONFIG_FILE" > /dev/null; then
+if [ -z "$ROS_DISTRO" ] || [ "$ROS_DISTRO" = "none" ]; then
+    ROS_DISTRO=""
+    echo "No ROS distribution selected. Using base Ubuntu image."
+elif ! yq -e ".ros_versions | has(\"$ROS_DISTRO\")" "$CONFIG_FILE" > /dev/null; then
     echo "Error: Invalid ROS distribution '$ROS_DISTRO'."
     echo "Available options: $AVAILABLE_ROS_DISTROS"
     exit 1
+else
+    echo "Using ROS distribution: '$ROS_DISTRO'"
 fi
-echo "Using ROS distribution: '${ROS_DISTRO:-default}'"
 
 
 # Set CUDA version
-DOCKER_CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+" || true)
-DOCKER_CUDA_VERSION=${DOCKER_CUDA_VERSION:-""}
+if [ "${2:-}" = "none" ]; then
+    DOCKER_CUDA_VERSION=""
+elif [ -n "${2:-}" ]; then
+    DOCKER_CUDA_VERSION="$2"
+else
+    DOCKER_CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+" || true)
+    DOCKER_CUDA_VERSION=${DOCKER_CUDA_VERSION:-""}
+fi
 echo "Using CUDA version: ${DOCKER_CUDA_VERSION:-None}"
 
 
@@ -71,4 +81,5 @@ docker build \
     --build-arg BASE_IMAGE="$BASE_IMAGE" \
     --build-arg ROS_DISTRO="$ROS_DISTRO" \
     -t "$OS_IMAGE_NAME" .
+
 echo "$OS_IMAGE_NAME"

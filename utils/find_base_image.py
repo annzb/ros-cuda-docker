@@ -43,7 +43,7 @@ class ImageSelector:
 
     def determine_base_image(self):
         """
-        Determine the base image based on CUDA and ROS versions.
+        Determine the base image based on CUDA and ROS versions, considering only 'base' and 'devel' images, ignoring 'runtime'.
         """
         if self.ros_version not in self.ros_config:
             available_versions = ", ".join(str(v) for v in self.ros_config.keys())
@@ -54,13 +54,14 @@ class ImageSelector:
         if self.cuda_version is None:
             return f'ubuntu:{ubuntu_version}'
         else:
-            image_postfix = f'-base-ubuntu{ubuntu_version}'
+            image_postfix = f'-ubuntu{ubuntu_version}'
             image_tag = self.get_latest_cuda_tag(image_postfix)
             return f'nvidia/cuda:{image_tag}'
 
     def get_latest_cuda_tag(self, base_image_postfix):
         """
-        Query Docker Hub to find the latest patch version for a given CUDA X.Y version.
+        Query Docker Hub to find the latest patch version for a given CUDA X.Y version,
+        considering only 'base' and 'devel' images, ignoring 'runtime'.
         """
         base_url = "https://hub.docker.com/v2/repositories/nvidia/cuda/tags"
         params = {"page_size": 100}
@@ -75,8 +76,8 @@ class ImageSelector:
 
                 for result in data.get("results", []):
                     tag = result.get("name", "")
-                    if tag.startswith(self.cuda_version) and base_image_postfix in tag:
-                        match = re.match(rf"{self.cuda_version}\.(\d+){base_image_postfix}", tag)
+                    if tag.startswith(self.cuda_version) and base_image_postfix in tag and 'runtime' not in tag:
+                        match = re.match(rf"{self.cuda_version}\.(\d+)-(base|devel){base_image_postfix}", tag)
                         if match:
                             patch_version = int(match.group(1))
                             if patch_version > latest_patch_version:
@@ -92,6 +93,7 @@ class ImageSelector:
             return latest_patch
         else:
             sys.exit(f"No matching CUDA image found for version {self.cuda_version}")
+
 
 
 def main(cuda_version, ros_version):
