@@ -1,6 +1,6 @@
 # ROS + CUDA Docker Images
 
-This repository provides pre-configured Dockerfiles and scripts to build Docker images combining **ROS** (Robot Operating System) and **NVIDIA CUDA** for GPU acceleration based on **Ubuntu** images.
+This repository provides scripts to build Docker images combining **ROS** (Robot Operating System) and **NVIDIA CUDA** for GPU acceleration based on **Ubuntu** images.
 You can use pre-built images from DockerHub or build your own combinations.
 
 ---
@@ -40,7 +40,7 @@ Below is a complete list of pre-built **ROS** and **CUDA** versions. **Only the 
 Run the provided script to build an image for your desired **ROS** and **CUDA** versions:
 
 ```bash
-./build_image.sh <ros_distro> <cuda_version>
+python3 build.py --ros <ros_distro> --cuda <cuda_version>
 ```
 
 - **`<ros_distro>`**: ROS distribution (e.g., `noetic`, `humble`, `jazzy`). Leave empty or use `none` for no ROS.
@@ -50,17 +50,17 @@ Run the provided script to build an image for your desired **ROS** and **CUDA** 
 
 - Build ROS Noetic with CUDA 12.4:
   ```bash
-  ./build_image.sh noetic 12.4
-  ```
-
-- Build ROS Jazzy without CUDA:
-  ```bash
-  ./build_image.sh jazzy none
+  ./build_image.sh --ros noetic --cuda 12.4
   ```
   
 - Build ROS Humble while **detecting the local CUDA version**:
   ```bash
-  ./build_image.sh humble
+  ./build_image.sh --ros humble
+  ```
+  
+- Build ROS Jazzy without CUDA:
+  ```bash
+  ./build_image.sh --ros jazzy --cuda none
   ```
 
 ## System Requirements for Building Images
@@ -68,7 +68,7 @@ Run the provided script to build an image for your desired **ROS** and **CUDA** 
 - **OS**: Linux (Ubuntu 20.04+ recommended)
 - **Docker**: Version 20.10+
 - **Docker Buildx**: Required for caching and multi-stage builds
-- **Python 3**: For helper scripts
+- **Python 3.8+**: For helper scripts
 - **yq**: YAML processor for bash scripts
 
 ---
@@ -90,7 +90,7 @@ Each image includes the following major libraries and tools:
 
 For CUDA builds, base images are **dynamically pulled** from the official **NVIDIA DockerHub** repository. The selection process:
 
-- Targets `base` and `devel` images, while ignoring `runtime` images.
+- Ignores `runtime` and `cudnn` images.
 - Automatically selects the **latest** compatible tag based on the requested CUDA version and Ubuntu release.
 
 ---
