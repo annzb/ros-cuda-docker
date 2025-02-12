@@ -36,7 +36,7 @@ AVAILABLE_ROS_DISTROS=$(yq '.ros_versions | keys | map(select(. != "default")) |
 ROS_DISTRO="${1:-}"
 if [ -z "$ROS_DISTRO" ] || [ "$ROS_DISTRO" = "none" ]; then
     ROS_DISTRO=""
-    echo "No ROS distribution selected. Using base Ubuntu image."
+    echo "No ROS distribution selected."
 elif ! yq -e ".ros_versions | has(\"$ROS_DISTRO\")" "$CONFIG_FILE" > /dev/null; then
     echo "Error: Invalid ROS distribution '$ROS_DISTRO'."
     echo "Available options: $AVAILABLE_ROS_DISTROS"
@@ -58,22 +58,31 @@ fi
 echo "Using CUDA version: ${DOCKER_CUDA_VERSION:-None}"
 
 
+if [ -z "$DOCKER_CUDA_VERSION" ] && [ -z "$ROS_DISTRO" ]; then
+    echo "Error: Neither ROS distribution nor CUDA version specified. Skipping build."
+    exit 0
+fi
+
+
 # Set base image
 BASE_IMAGE=$(python3 "$PYTHON_SCRIPT" --cuda "$DOCKER_CUDA_VERSION" --ros "$ROS_DISTRO")
 if [ -z "$BASE_IMAGE" ]; then
-    echo "Error: Failed to determine base image."
-    exit 1
+    echo "No valid base image found for ROS $ROS_DISTRO and CUDA $DOCKER_CUDA_VERSION. Aborting."
+    exit 0
 fi
 echo "Using base image: $BASE_IMAGE"
 
 
 # Construct image name
-UBUNTU_VERSION=$(echo "$BASE_IMAGE" | grep -oP "ubuntu:?\K[0-9]+\.[0-9]+" || true)
-UBUNTU_VERSION=${UBUNTU_VERSION:-""}
-OS_IMAGE_NAME="annazabnus/ros-cuda:${UBUNTU_VERSION:-latest}"
-[ -n "$DOCKER_CUDA_VERSION" ] && OS_IMAGE_NAME+="-cuda$DOCKER_CUDA_VERSION"
-[ -n "$ROS_DISTRO" ] && OS_IMAGE_NAME+="-$ROS_DISTRO"
-echo "Building OS image: $OS_IMAGE_NAME"
+OS_IMAGE_NAME="annazabnus/ros-cuda"
+if [ -n "$DOCKER_CUDA_VERSION" ] && [ -n "$ROS_DISTRO" ]; then
+    OS_IMAGE_NAME+=":$DOCKER_CUDA_VERSION-$ROS_DISTRO"
+elif [ -n "$DOCKER_CUDA_VERSION" ]; then
+    OS_IMAGE_NAME+=":$DOCKER_CUDA_VERSION"
+elif [ -n "$ROS_DISTRO" ]; then
+    OS_IMAGE_NAME+=":$ROS_DISTRO"
+fi
+echo "Building image: $OS_IMAGE_NAME"
 
 
 # Build image
