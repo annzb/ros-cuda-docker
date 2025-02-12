@@ -20,25 +20,19 @@ jobs:
 
       - name: Free Up Disk Space
         run: |
-          echo "Freeing up runner disk space..."
           sudo apt-get clean
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /var/lib/dpkg/info/*
+          sudo rm -rf /usr/share/man/*
+          sudo rm -rf /usr/share/doc/*
           docker system prune -af --volumes
           df -h
 
-#      - name: Set up Python Environment
-#        run: |
-#          python3 -m venv .venv
-#          source .venv/bin/activate
-#          pip install -r requirements.txt
-
       - name: Run Tests
         run: python3 utils/tests.py
-#        run: |
-#          source .venv/bin/activate
-#          python3 -m unittest discover -s utils -p "tests.py"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -49,10 +43,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ matrix.ros }}-${{ matrix.cuda }}-${{ github.run_id }}
+          key: docker-buildx-${{ matrix.ros }}-${{ matrix.cuda }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-docker-${{ matrix.ros }}-${{ matrix.cuda }}
-            ${{ runner.os }}-docker-
+            docker-buildx-${{ matrix.ros }}-${{ matrix.cuda }}
+            docker-buildx-
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -63,22 +57,16 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           DOCKER_BUILDKIT=1 \
-          DOCKER_PUSH_IMAGES=true \
           DOCKER_CACHE_FROM="/tmp/.buildx-cache" \
           DOCKER_CACHE_TO="/tmp/.buildx-cache-new" \
           python3 build.py --ros "${{ matrix.ros }}" --cuda "${{ matrix.cuda }}"
 
-      - name: Clean Up Docker Resources
+      - name: Clean Up Unused Docker Cache
         run: |
-          docker system prune -af --volumes
+          docker buildx prune -af
+          ls -lt /tmp/.buildx-cache | tail -n +6 | xargs rm -rf
           df -h
-
-      - name: Update Cache After Build
-        run: |
-          rm -rf /tmp/.buildx-cache
-          if [ -d /tmp/.buildx-cache-new ]; then
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-          fi
 
       - name: Logout from Docker Hub
         run: docker logout
+

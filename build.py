@@ -9,7 +9,6 @@ from utils.version_selector import VersionSelector, ImageNotFoundError
 
 CACHE_FROM_DIR = os.getenv("DOCKER_CACHE_FROM", "/tmp/.buildx-cache")
 CACHE_TO_DIR = os.getenv("DOCKER_CACHE_TO", "/tmp/.buildx-cache-new")
-PUSH_IMAGES = os.getenv("DOCKER_PUSH_IMAGES", "").lower() == 'true'
 
 
 class ImageBuild:
@@ -99,17 +98,10 @@ class ImageBuild:
             f"--cache-from=type=local,src={CACHE_FROM_DIR}",
             f"--cache-to=type=local,dest={CACHE_TO_DIR},mode=max",
             "-t", image_name,
-            "--load",
+            "--push",
             "."
         ]
-        try:
-            subprocess.run(build_command, check=True)
-        except subprocess.CalledProcessError:
-            raise
-
-        if PUSH_IMAGES:
-            print(f"Pushing image: {image_name}")
-            subprocess.run(["docker", "push", image_name], check=True)
+        subprocess.run(build_command, check=True)
 
 
 def main() -> None:
