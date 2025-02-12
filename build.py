@@ -9,6 +9,7 @@ from utils.version_selector import VersionSelector, ImageNotFoundError
 
 CACHE_FROM_DIR = os.getenv("DOCKER_CACHE_FROM", "/tmp/.buildx-cache")
 CACHE_TO_DIR = os.getenv("DOCKER_CACHE_TO", "/tmp/.buildx-cache-new")
+PUSH_IMAGES = os.getenv("DOCKER_PUSH_IMAGES", "").lower() == 'true'
 
 
 class ImageBuild:
@@ -98,7 +99,7 @@ class ImageBuild:
             f"--cache-from=type=local,src={CACHE_FROM_DIR}",
             f"--cache-to=type=local,dest={CACHE_TO_DIR},mode=max",
             "-t", image_name,
-            "--push",
+            "--push" if PUSH_IMAGES else "--load",
             "."
         ]
         subprocess.run(build_command, check=True)
