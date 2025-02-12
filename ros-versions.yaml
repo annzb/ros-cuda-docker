@@ -1,0 +1,9 @@
+ros_versions:
+  default:
+    ubuntu: "24.04"
+  noetic:
+    ubuntu: "20.04"
+  humble:
+    ubuntu: "22.04"
+  jazzy:
+    ubuntu: "24.04"
