@@ -44,7 +44,6 @@ RUN if [ -n "$ROS_DISTRO" ]; then \
     fi && \
     apt update && apt install --no-install-recommends -y \
         ros-${ROS_DISTRO}-desktop-full \
-        python3-rosbag \
         python3-rosdep \
         python3-colcon-common-extensions && \
     rosdep init && rosdep update && \
