@@ -24,12 +24,17 @@ RUN set -eux; \
 
 
 # Python
-RUN apt update && apt install -y python3-pip python3-setuptools python3-wheel
-RUN python3 -m pip install --no-cache-dir --upgrade pip pip-tools pipdeptree
-RUN python3 -m pip freeze > /tmp/requirements.txt && \
-    pip-compile --output-file=/tmp/requirements-updated.txt /tmp/requirements.txt && \
-    python3 -m pip install --no-cache-dir --upgrade -r /tmp/requirements-updated.txt
+# Upgrade system packages
+RUN apt update && apt install -y python3-pip python3-venv python3-setuptools python3-wheel
 
+# Upgrade pip first
+RUN python3 -m pip install --no-cache-dir --upgrade pip
+
+# Install the required tool for safer dependency resolution
+RUN python3 -m pip install --no-cache-dir --upgrade pip-review
+
+# Upgrade all installed system Python packages safely
+RUN pip-review --auto --quiet || true
 
 
 # CUDA
