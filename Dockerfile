@@ -1,5 +1,5 @@
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
@@ -21,6 +21,15 @@ RUN set -eux; \
         software-properties-common \
         build-essential \
         cmake
+
+
+# Python
+RUN apt update && apt install -y python3-pip python3-setuptools python3-wheel
+RUN python3 -m pip install --no-cache-dir --upgrade pip pip-tools pipdeptree
+RUN python3 -m pip freeze > /tmp/requirements.txt && \
+    pip-compile --output-file=/tmp/requirements-updated.txt /tmp/requirements.txt && \
+    python3 -m pip install --no-cache-dir --upgrade -r /tmp/requirements-updated.txt
+
 
 
 # CUDA
@@ -49,6 +58,8 @@ RUN if [ -n "$ROS_DISTRO" ]; then \
     rosdep init && rosdep update && \
     echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc; \
 fi
+
+
 
 
 CMD ["bash"]
