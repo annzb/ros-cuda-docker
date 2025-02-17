@@ -95,9 +95,9 @@ class ImageBuild:
             "--build-arg", f"BASE_IMAGE={base_image}",
             "--build-arg", f"ROS_DISTRO={ros_distro}",
             "-t", image_name,
-            "push" if PUSH_IMAGES else "--load"
+            "--push" if PUSH_IMAGES else "--load",
+            "."
         ]
-        build_command.append(".")
         subprocess.run(build_command, check=True)
 
 
