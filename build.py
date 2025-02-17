@@ -7,8 +7,8 @@ from typing import Optional
 from utils.version_selector import VersionSelector, ImageNotFoundError
 
 
-CACHE_FROM_DIR = os.getenv("DOCKER_CACHE_FROM", "/tmp/.buildx-cache")
-CACHE_TO_DIR = os.getenv("DOCKER_CACHE_TO", "/tmp/.buildx-cache-new")
+# CACHE_FROM_DIR = os.getenv("DOCKER_CACHE_FROM", "/tmp/.buildx-cache")
+# CACHE_TO_DIR = os.getenv("DOCKER_CACHE_TO", "/tmp/.buildx-cache-new")
 PUSH_IMAGES = os.getenv("DOCKER_PUSH_IMAGES", "").lower() == 'true'
 
 
@@ -43,6 +43,8 @@ class ImageBuild:
 
     def detect_local_cuda(self) -> Optional[str]:
         """Detect the local CUDA version in X.Y format if available."""
+        if self.version_selector.mac_os:
+            return None
         print("Detecting local CUDA version...")
         try:
             cuda_version_output = subprocess.run(["nvcc", "--version"], capture_output=True, text=True, check=True).stdout
@@ -72,10 +74,8 @@ class ImageBuild:
 
     def run(self, ros_distro: Optional[str], cuda_version: Optional[str]) -> None:
         """Execute the build process."""
-        cuda_version = cuda_version or self.detect_local_cuda()
-        if cuda_version and cuda_version.lower() == 'none':
-            cuda_version = None
         cuda_version = self.version_selector.validate_cuda_version(cuda_version)
+        cuda_version = cuda_version or self.detect_local_cuda()
         if cuda_version:
             print(f"Using CUDA version: {cuda_version}")
 
@@ -96,12 +96,15 @@ class ImageBuild:
             "docker", "buildx", "build",
             "--build-arg", f"BASE_IMAGE={base_image}",
             "--build-arg", f"ROS_DISTRO={ros_distro}",
-            f"--cache-from=type=local,src={CACHE_FROM_DIR}",
-            f"--cache-to=type=local,dest={CACHE_TO_DIR},mode=max",
-            "-t", image_name,
-            "--push" if PUSH_IMAGES else "--load",
-            "."
+            # f"--cache-from=type=local,src={CACHE_FROM_DIR}",
+            # f"--cache-to=type=local,dest={CACHE_TO_DIR},mode=max",
+            "-t", image_name
         ]
+        if PUSH_IMAGES:
+            build_command.extend(["--platform", "linux/amd64,linux/arm64", "--push"])
+        else:
+            build_command.append("--load")
+        build_command.append(".")
         subprocess.run(build_command, check=True)
 
 

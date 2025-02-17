@@ -21,15 +21,18 @@ class VersionSelector:
         """
         self.version_config = self._load_ros_config(version_config_file)
         self.available_ros_distros = ", ".join(str(v) for v in self.version_config.keys())
+        self.mac_os = os.uname().sysname == "Darwin"
 
     def validate_cuda_version(self, cuda_version: Optional[str]) -> Optional[str]:
         """
         Validate that the input CUDA version is in the correct X.Y format.
         """
-        if not cuda_version:
+        if not cuda_version or cuda_version.lower() == 'none':
             return None
         if not re.match(r"^\d+\.\d+$", cuda_version):
             raise ValueError("Error: CUDA version must be in the format 'X.Y' where X and Y are numeric.")
+        if cuda_version and self.mac_os:
+            raise ValueError("Error: CUDA not available on Mac.")
         return cuda_version
 
     def validate_ros_version(self, ros_version: Optional[str]) -> Optional[str]:
