@@ -7,8 +7,6 @@ from typing import Optional
 from utils.version_selector import VersionSelector, ImageNotFoundError
 
 
-# CACHE_FROM_DIR = os.getenv("DOCKER_CACHE_FROM", "/tmp/.buildx-cache")
-# CACHE_TO_DIR = os.getenv("DOCKER_CACHE_TO", "/tmp/.buildx-cache-new")
 PUSH_IMAGES = os.getenv("DOCKER_PUSH_IMAGES", "").lower() == 'true'
 
 
@@ -96,14 +94,9 @@ class ImageBuild:
             "docker", "buildx", "build",
             "--build-arg", f"BASE_IMAGE={base_image}",
             "--build-arg", f"ROS_DISTRO={ros_distro}",
-            # f"--cache-from=type=local,src={CACHE_FROM_DIR}",
-            # f"--cache-to=type=local,dest={CACHE_TO_DIR},mode=max",
-            "-t", image_name
+            "-t", image_name,
+            "push" if PUSH_IMAGES else "--load"
         ]
-        if PUSH_IMAGES:
-            build_command.extend(["--platform", "linux/amd64,linux/arm64", "--push"])
-        else:
-            build_command.append("--load")
         build_command.append(".")
         subprocess.run(build_command, check=True)
 
