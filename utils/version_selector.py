@@ -6,23 +6,21 @@ import subprocess
 import yaml
 from typing import Optional, Dict
 
-
 NVIDIA_DOCKERHUB_URL = "https://hub.docker.com/v2/repositories/nvidia/cuda/tags"
 IGNORE_OS_TAGS = {'runtime', 'cudnn'}
-
 
 class ImageNotFoundError(Exception):
     pass
 
-
 class VersionSelector:
     def __init__(self, version_config_file: str = 'ros-versions.yaml') -> None:
         """
-        Initializes the ImageSelector with a given ROS version configuration file.
+        Initializes the VersionSelector with a given ROS version configuration file.
         """
         self.version_config = self._load_ros_config(version_config_file)
         self.available_ros_distros = ", ".join(str(v) for v in self.version_config.keys())
         self.mac_os = os.uname().sysname == "Darwin"
+        self._cuda_tags_cache: Optional[dict] = None  # Cache for Docker Hub requests
 
     def validate_cuda_version(self, cuda_version: Optional[str], detect_local: bool = True) -> Optional[str]:
         """
@@ -83,34 +81,43 @@ class VersionSelector:
     def _get_latest_cuda_tag(self, cuda_version: str, base_image_postfix: str) -> str:
         """
         Query Docker Hub to find the latest patch version for a given CUDA X.Y version.
+        Uses cached results if available.
         """
-        params = {"page_size": 100}
+        if self._cuda_tags_cache is None:  # Fetch only once
+            self._cuda_tags_cache = self._fetch_dockerhub_tags()
+
         latest_patch = None
         latest_patch_version = -1
-        base_url = NVIDIA_DOCKERHUB_URL
+        for tag in self._cuda_tags_cache:
+            if tag.startswith(cuda_version) and base_image_postfix in tag and not any(t in tag for t in IGNORE_OS_TAGS):
+                match = re.match(rf"{cuda_version}\.(\d+)", tag)
+                if match:
+                    patch_version = int(match.group(1))
+                    if patch_version > latest_patch_version:
+                        latest_patch = tag
+                        latest_patch_version = patch_version
+        if latest_patch:
+            return latest_patch
+        else:
+            raise ImageNotFoundError(f"No matching CUDA image found for version {cuda_version} containing {base_image_postfix}.")
 
+    def _fetch_dockerhub_tags(self) -> list:
+        """
+        Fetch all available CUDA tags from Docker Hub and return them as a list.
+        """
+        params = {"page_size": 100}
+        base_url = NVIDIA_DOCKERHUB_URL
+        tags = []
         try:
             while base_url:
                 response = requests.get(base_url, params=params)
                 response.raise_for_status()
                 data = response.json()
-                for result in data.get("results", []):
-                    tag = result.get("name", "")
-                    if tag.startswith(cuda_version) and base_image_postfix in tag and not any(t in tag for t in IGNORE_OS_TAGS):
-                        match = re.match(rf"{cuda_version}\.(\d+)", tag)
-                        if match:
-                            patch_version = int(match.group(1))
-                            if patch_version > latest_patch_version:
-                                latest_patch = tag
-                                latest_patch_version = patch_version
+                tags.extend(tag.get("name", "") for tag in data.get("results", []))
                 base_url = data.get("next")
         except requests.RequestException as e:
             raise ValueError(f"Error fetching CUDA tags: {e}")
-
-        if latest_patch:
-            return latest_patch
-        else:
-            raise ImageNotFoundError(f"No matching CUDA image found for version {cuda_version} containing {base_image_postfix}. Last detected tag: {tag}")
+        return tags
 
     def detect_local_cuda(self) -> Optional[str]:
         """Detect the local CUDA version in X.Y format if available."""
