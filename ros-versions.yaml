@@ -1,6 +1,4 @@
 ros_versions:
-  default:
-    ubuntu: "24.04"
   noetic:
     ubuntu: "20.04"
   humble:

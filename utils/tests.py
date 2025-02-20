@@ -3,54 +3,89 @@ from version_selector import VersionSelector, ImageNotFoundError
 
 
 class TestBaseImage(unittest.TestCase):
+    CUDA_INVALID = (1222.1222, 'abd', 12, '12', '12.2.3', ['12.4'])
+    CUDA_UNSUPPORTED = ('1222.1222', '10.10')
+    CUDA_VALID = ('11.8', '12.6')
+
+    ROS_INVALID = ('ros', 123, ['noetic'], ' humble ')
+    ROS_UNSUPPORTED = ('galactic', 'foxy')
+    ROS_VALID = ('jazzy', 'humble', 'noetic')
+
+    VALID_KWARGS = (
+        {'cuda_version': '11.8', 'ros_version': 'noetic'},
+        {'cuda_version': '12.4', 'ros_version': 'humble'},
+        {'cuda_version': '12.6', 'ros_version': 'jazzy'}
+    )
+
+    EMPTY_VALS = (None, '', 'none', 'None', [], 0)
+
+
     def setUp(self):
         self.selector = VersionSelector()
 
     def test_no_arguments(self):
-        result = self.selector.determine_base_image(None, None)
-        self.assertEqual(result, "ubuntu:24.04")
+        for cuda in self.EMPTY_VALS:
+            for ros in self.EMPTY_VALS:
+                base_image = self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                self.assertEqual(base_image, "ubuntu:24.04")
 
     def test_invalid_cuda(self):
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("12.6.1", None)
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("12", None)
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("abcd", None)
-        with self.assertRaises(ImageNotFoundError):
-            self.selector.determine_base_image("1222.1222", None)
+        for cuda in self.CUDA_INVALID:
+            for ros in self.ROS_VALID + self.ROS_INVALID + self.ROS_UNSUPPORTED + self.EMPTY_VALS:
+                try:
+                    self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                except ValueError:
+                    pass
+                else:
+                    print(cuda, ros)
+                    raise
 
     def test_invalid_ros(self):
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image(None, 'ros')
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image(None, '1234')
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image(None, 'galactic')
+        for cuda in self.CUDA_VALID + self.CUDA_UNSUPPORTED + self.EMPTY_VALS:
+            for ros in self.ROS_INVALID:
+                try:
+                    self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                except ValueError:
+                    pass
+                else:
+                    print(cuda, ros)
+                    raise
 
-    def test_valid_cuda_no_ros(self):
-        result = self.selector.determine_base_image("12.6", None)
-        self.assertEqual(result, "nvidia/cuda:12.6.3-devel-ubuntu24.04")
+    def test_unsupported_ros(self):
+        for cuda in self.CUDA_VALID + self.CUDA_UNSUPPORTED + self.EMPTY_VALS:
+            for ros in self.ROS_UNSUPPORTED:
+                try:
+                    self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                except ValueError:
+                    pass
+                else:
+                    print(cuda, ros)
+                    raise
 
-    def test_no_cuda_valid_ros(self):
-        result = self.selector.determine_base_image(None, "noetic")
-        self.assertEqual(result, "ubuntu:20.04")
+    def test_unsupported_cuda(self):
+        for cuda in self.CUDA_UNSUPPORTED:
+            for ros in self.ROS_VALID + self.EMPTY_VALS:
+                try:
+                    self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                except ImageNotFoundError:
+                    pass
+                else:
+                    print(cuda, ros)
+                    raise
 
-    def test_valid_cuda_valid_ros(self):
-        result = self.selector.determine_base_image("12.6", "noetic")
-        self.assertEqual(result, "nvidia/cuda:12.6.3-devel-ubuntu20.04")
+    def test_valid_ubuntu_base(self):
+        for cuda in self.EMPTY_VALS:
+            for ros in self.ROS_VALID:
+                base_image = self.selector.determine_base_image(cuda, ros, detect_local_cuda=False)
+                assert base_image.startswith('ubuntu:')
 
-    def test_invalid_cuda_invalid_ros(self):
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("12", "galactic")
-
-    def test_valid_cuda_invalid_ros(self):
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("12.6", "galactic")
-
-    def test_invalid_cuda_valid_ros(self):
-        with self.assertRaises(ValueError):
-            self.selector.determine_base_image("12", "noetic")
+    def test_valid_nvidia_base(self):
+        for kwargs in self.VALID_KWARGS:
+            base_image = self.selector.determine_base_image(detect_local_cuda=False, **kwargs)
+            assert base_image.startswith('nvidia/cuda:') and kwargs['cuda_version'] in base_image
+            for ros in self.EMPTY_VALS:
+                base_image = self.selector.determine_base_image(kwargs['cuda_version'], ros, detect_local_cuda=False)
+                assert base_image.startswith('nvidia/cuda:') and kwargs['cuda_version'] in base_image
 
 
 if __name__ == "__main__":

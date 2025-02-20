@@ -41,17 +41,6 @@ RUN set -eux; \
         cmake
 
 
-# Python
-# Upgrade system packages
-RUN apt update && apt install -y python3-pip python3-venv python3-setuptools python3-wheel
-# Upgrade pip first
-RUN python3 -m pip install --no-cache-dir --upgrade pip
-# Install the required tool for safer dependency resolution
-RUN python3 -m pip install --no-cache-dir --upgrade pip-review
-# Upgrade all installed system Python packages safely
-RUN pip-review --auto --quiet || true
-
-
 # CUDA
 ARG CUDA_VERSION=""
 RUN ARCH=$(dpkg --print-architecture); \
