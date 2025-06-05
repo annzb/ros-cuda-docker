@@ -55,7 +55,7 @@ class ImageBuild:
             raise ValueError("Neither ROS distribution nor CUDA version specified.")
         return self.image_name_prefix + ":" + image_tag
 
-    def run(self, ros_distro: Optional[str], cuda_version: Optional[str]) -> None:
+    def run(self, ros_distro: Optional[str], cuda_version: Optional[str], verbose: bool = False) -> None:
         """Execute the build process."""
         cuda_version = self.version_selector.validate_cuda_version(cuda_version, detect_local=True)
         if cuda_version:
@@ -76,18 +76,21 @@ class ImageBuild:
         print(f'Building image: {image_name}')
         build_command = [
             "docker", "buildx", "build",
+            "--progress=plain",
             "--build-arg", f"BASE_IMAGE={base_image}",
             "--build-arg", f"ROS_DISTRO={ros_distro or ''}",
+            "--build-arg", f"CUDA_VERSION={cuda_version or ''}",
+            "--build-arg", f"VERBOSE={str(verbose).lower()}",
             "-t", image_name
         ]
-        if PUSH_IMAGES:
+        if PUSH_IMAGES:  # Building in Github Actions
             build_command.append("--push")
             if not cuda_version:
                 build_command.extend(["--platform", "linux/amd64,linux/arm64"])
-        else:
+        else:  # Building locally
             build_command.append("--load")
         build_command.append(".")
-        subprocess.run(build_command, check=True)
+        subprocess.run(build_command, check=True, stdout=None, stderr=None)
 
 
 def main() -> None:
@@ -96,11 +99,12 @@ def main() -> None:
     parser.add_argument("--ros", required=False, help="ROS distribution (e.g., 'noetic', 'humble', etc.)")
     parser.add_argument("--cuda", required=False, help="CUDA version in X.Y format (e.g., '12.6')")
     parser.add_argument("--config", default="ros-versions.yaml", help="Path to the ROS version configuration file")
+    parser.add_argument("--verbose", action="store_true", help="Show detailed build output")
     args = parser.parse_args()
 
     build = ImageBuild(version_config_file=args.config)
     build.setup()
-    build.run(ros_distro=args.ros, cuda_version=args.cuda)
+    build.run(ros_distro=args.ros, cuda_version=args.cuda, verbose=args.verbose)
 
 
 if __name__ == "__main__":
