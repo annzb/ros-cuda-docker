@@ -47,7 +47,7 @@ RUN ARCH=$(dpkg --print-architecture); \
     if [ -n "$CUDA_VERSION" ] && [ "$ARCH" = "amd64" ]; then \
         set -eux; \
         CUDA_VERSION_X_Y=$(echo "$CUDA_VERSION" | awk -F. '{print $1"-"$2}'); \
-        apt update && apt install --no-install-recommends -y cuda-toolkit-${CUDA_VERSION_X_Y} && \
+        apt update && apt install --no-install-recommends -y cuda-toolkit-${CUDA_VERSION_X_Y} nvidia-utils-${CUDA_VERSION_X_Y} && \
         nvcc --version; \
     else \
         echo "Skipping CUDA installation on ARM64"; \
