@@ -19,7 +19,7 @@ RUN set -eu; \
         echo "Using verbose mode."; \
     else \
         APT_FLAGS="-qq"; \
-        OUTPUT_REDIRECT="> /dev/null"; \
+        OUTPUT_REDIRECT='" > /dev/null"'; \
         echo "Using quiet mode."; \
     fi; \
     echo "APT_FLAGS=$APT_FLAGS" > $BUILD_VARIABLES; \
@@ -63,25 +63,31 @@ RUN set -eu; \
 # Install Ubuntu libraries
 RUN set -eu; \
     . $BUILD_VARIABLES; \
-
-    # Add sources
+    \
+    # Disable Ubuntu's default deb822 sources file to avoid duplication
+    if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+        mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.disabled; \
+    fi; \
+    \
+    # Clean old-style sources
+    sed -i '/deb.*main restricted universe multiverse/d' /etc/apt/sources.list; \
+    \
+    # Add your own sources safely
     add_source() { \
-        if ! grep -q "$1" /etc/apt/sources.list; then \
+        if ! grep -qF "$1" /etc/apt/sources.list; then \
             echo "$1" >> /etc/apt/sources.list; \
         fi; \
     }; \
-    sed -i '/deb.*main restricted universe multiverse/d' /etc/apt/sources.list; \
     add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME} main restricted universe multiverse"; \
     add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-updates main restricted universe multiverse"; \
     add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-backports main restricted universe multiverse"; \
     add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
-
-    # Install packages
-    echo "Verbose settings $APT_FLAGS $OUTPUT_REDIRECT"; \
-    eval "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
-    eval "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
-    eval "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
-    eval "apt install --no-install-recommends -y $APT_FLAGS \
+    \
+    # Update & install
+    sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
+    sh -c "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
+    sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
+    sh -c "apt install --no-install-recommends -y $APT_FLAGS \
         wget \
         lsb-release \
         gnupg \
@@ -96,16 +102,12 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
         . $BUILD_VARIABLES; \
         if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
             echo "Installing CUDA $CUDA_VERSION_X_Y on architecture $ARCH"; \
-            wget -qO - https://developer.download.nvidia.com/compute/cuda/repos/${UBUNTU_CODENAME}/${ARCH}/cuda-keyring_1.1-1_all.deb -O /tmp/cuda-keyring.deb; \
+            wget -q https://developer.download.nvidia.com/compute/cuda/repos/${UBUNTU_CODENAME}/${ARCH}/cuda-keyring_1.1-1_all.deb -O /tmp/cuda-keyring.deb; \
             dpkg -i /tmp/cuda-keyring.deb; \
             rm /tmp/cuda-keyring.deb; \
-            eval "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
-            eval "apt install --no-install-recommends -y $APT_FLAGS \
-                cuda-toolkit-${CUDA_VERSION_X_Y} \
-                nvidia-utils-${CUDA_VERSION_X_Y} \
-                nvidia-driver-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
+            sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
+            eval "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
             nvcc --version; \
-            nvidia-smi; \
         else \
             echo "CUDA not supported on architecture $ARCH"; \
         fi; \
