@@ -78,7 +78,7 @@ RUN set -eu; \
     # add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
-    sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
+    # sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
     sh -c "apt install --no-install-recommends -y $APT_FLAGS \
         wget \
         lsb-release \
