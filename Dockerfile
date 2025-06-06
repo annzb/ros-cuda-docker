@@ -102,7 +102,7 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
             dpkg -i /tmp/cuda-keyring.deb; \
             rm /tmp/cuda-keyring.deb; \
             sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
-            eval "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
+            sh -c "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
             nvcc --version; \
         else \
             echo "CUDA not supported on architecture $ARCH"; \
@@ -125,8 +125,8 @@ RUN if [ -n "$ROS_DISTRO" ]; then \
     fi; \
     \
     # Install ROS
-    eval "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
-    eval "apt install --no-install-recommends -y $APT_FLAGS \
+    sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
+    sh -c "apt install --no-install-recommends -y $APT_FLAGS \
         ros-${ROS_DISTRO}-desktop-full \
         python3-rosdep \
         python3-colcon-common-extensions $OUTPUT_REDIRECT"; \
