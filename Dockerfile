@@ -24,13 +24,13 @@ RUN set -eu; \
     fi; \
     echo "APT_FLAGS=$APT_FLAGS" > $BUILD_VARIABLES; \
     echo "OUTPUT_REDIRECT=$OUTPUT_REDIRECT" >> $BUILD_VARIABLES; \
-
+    \
     # System architecture
     ARCH=$(dpkg --print-architecture | tr '[:upper:]' '[:lower:]'); \
     echo "Detected architecture: $ARCH."; \
     echo "ARCH=$ARCH" >> $BUILD_VARIABLES; \
-
-    # Set package sources
+    \
+    # Ubuntu package sources
     if [ "$ARCH" = "arm64" ]; then \
         UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports"; \
         SECURITY_MIRROR="http://ports.ubuntu.com/ubuntu-ports"; \
@@ -43,7 +43,7 @@ RUN set -eu; \
     echo "UBUNTU_MIRROR=$UBUNTU_MIRROR" >> $BUILD_VARIABLES; \
     echo "SECURITY_MIRROR=$SECURITY_MIRROR" >> $BUILD_VARIABLES; \
     echo "UBUNTU_CODENAME=$UBUNTU_CODENAME" >> $BUILD_VARIABLES; \
-
+    \
     # Package versions
     CUDA_VERSION_X_Y=$(echo "$CUDA_VERSION" | awk -F. '{print $1"-"$2}'); \
     echo "ROS_DISTRO=$ROS_DISTRO" >> $BUILD_VARIABLES; \
@@ -64,15 +64,11 @@ RUN set -eu; \
 RUN set -eu; \
     . $BUILD_VARIABLES; \
     \
-    # Disable Ubuntu's default deb822 sources file to avoid duplication
+    # Clean old sources
     if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
         mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.disabled; \
     fi; \
-    \
-    # Clean old-style sources
     sed -i '/deb.*main restricted universe multiverse/d' /etc/apt/sources.list; \
-    \
-    # Add your own sources safely
     add_source() { \
         if ! grep -qF "$1" /etc/apt/sources.list; then \
             echo "$1" >> /etc/apt/sources.list; \
@@ -118,7 +114,7 @@ fi
 RUN if [ -n "$ROS_DISTRO" ]; then \
     set -eu; \
     . $BUILD_VARIABLES; \
-    
+    \
     # Set up ROS repository
     wget -qO - https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -; \
     UBUNTU_CODENAME=$(lsb_release -sc); \
@@ -127,7 +123,7 @@ RUN if [ -n "$ROS_DISTRO" ]; then \
     else \
         echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list; \
     fi; \
-
+    \
     # Install ROS
     eval "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     eval "apt install --no-install-recommends -y $APT_FLAGS \
