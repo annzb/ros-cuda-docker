@@ -85,7 +85,7 @@ RUN set -eu; \
         gnupg \
         software-properties-common \
         build-essential \
-        cmake libxnvctrl0 $OUTPUT_REDIRECT"
+        cmake $OUTPUT_REDIRECT"
 
         
 # Install CUDA
@@ -95,6 +95,7 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
         if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
             echo "Installing CUDA $CUDA_VERSION_X_Y on architecture $ARCH"; \
             sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
+            sh -c "apt install --no-install-recommends -y $APT_FLAGS nvidia-settings libxnvctrl0 $OUTPUT_REDIRECT"; \
             sh -c "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
             nvcc --version; \
         else \
