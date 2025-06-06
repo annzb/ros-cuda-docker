@@ -27,21 +27,9 @@ RUN set -eu; \
     \
     # System architecture
     ARCH=$(dpkg --print-architecture | tr '[:upper:]' '[:lower:]'); \
-    echo "Detected architecture: $ARCH."; \
-    echo "ARCH=$ARCH" >> $BUILD_VARIABLES; \
-    \
-    # Ubuntu package sources
-    if [ "$ARCH" = "arm64" ]; then \
-        UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports"; \
-        SECURITY_MIRROR="http://ports.ubuntu.com/ubuntu-ports"; \
-    else \
-        UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu"; \
-        SECURITY_MIRROR="http://security.ubuntu.com/ubuntu"; \
-    fi; \
     UBUNTU_CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || echo "noble"); \
-    echo "Using Ubuntu codename: $UBUNTU_CODENAME, Mirror: $UBUNTU_MIRROR, Security Mirror: $SECURITY_MIRROR"; \
-    echo "UBUNTU_MIRROR=$UBUNTU_MIRROR" >> $BUILD_VARIABLES; \
-    echo "SECURITY_MIRROR=$SECURITY_MIRROR" >> $BUILD_VARIABLES; \
+    echo "Detected architecture: $ARCH, OS Ubuntu $UBUNTU_CODENAME."; \
+    echo "ARCH=$ARCH" >> $BUILD_VARIABLES; \
     echo "UBUNTU_CODENAME=$UBUNTU_CODENAME" >> $BUILD_VARIABLES; \
     \
     # Package versions
@@ -63,19 +51,11 @@ RUN set -eu; \
 # Install Ubuntu libraries
 RUN set -eu; \
     . $BUILD_VARIABLES; \
-    if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
-        mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.disabled; \
+    if [ "$UBUNTU_CODENAME" = "noble" ]; then \
+        echo "deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse" > /etc/apt/sources.list; \
+        echo "deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse" >> /etc/apt/sources.list; \
+        echo "deb http://security.ubuntu.com/ubuntu noble-security main restricted universe multiverse" >> /etc/apt/sources.list; \
     fi; \
-    sed -i '/deb.*main restricted universe multiverse/d' /etc/apt/sources.list; \
-    add_source() { \
-        if ! grep -qF "$1" /etc/apt/sources.list; then \
-            echo "$1" >> /etc/apt/sources.list; \
-        fi; \
-    }; \
-    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME} main restricted universe multiverse"; \
-    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-updates main restricted universe multiverse"; \
-    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-backports main restricted universe multiverse"; \
-    # add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
     # sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
