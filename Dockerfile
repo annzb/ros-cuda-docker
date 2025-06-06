@@ -63,8 +63,6 @@ RUN set -eu; \
 # Install Ubuntu libraries
 RUN set -eu; \
     . $BUILD_VARIABLES; \
-    \
-    # Clean old sources
     if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
         mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.disabled; \
     fi; \
@@ -78,8 +76,6 @@ RUN set -eu; \
     add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-updates main restricted universe multiverse"; \
     add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-backports main restricted universe multiverse"; \
     add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
-    \
-    # Update & install
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
@@ -107,21 +103,16 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
 fi
 
 
-# ROS
+# Install ROS
 RUN if [ -n "$ROS_DISTRO" ]; then \
     set -eu; \
     . $BUILD_VARIABLES; \
-    \
-    # Set up ROS repository
-    wget -qO - https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -; \
-    UBUNTU_CODENAME=$(lsb_release -sc); \
-    if [ "$ROS_DISTRO" = "noetic" ]; then \
-        echo "deb http://packages.ros.org/ros/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros-latest.list; \
-    else \
-        echo "deb http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list; \
-    fi; \
-    \
-    # Install ROS
+    wget -qO /usr/share/keyrings/ros.gpg https://raw.githubusercontent.com/ros/rosdistro/master/ros.key; \
+    case "$ROS_DISTRO" in noetic|melodic|kinetic) \
+            echo "deb [signed-by=/usr/share/keyrings/ros.gpg] http://packages.ros.org/ros/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros-latest.list ;; \
+        *) \
+            echo "deb [signed-by=/usr/share/keyrings/ros.gpg] http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list ;; \
+    esac; \
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt install --no-install-recommends -y $APT_FLAGS \
         ros-${ROS_DISTRO}-desktop-full \
