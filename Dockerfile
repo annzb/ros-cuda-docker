@@ -98,9 +98,6 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
         . $BUILD_VARIABLES; \
         if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
             echo "Installing CUDA $CUDA_VERSION_X_Y on architecture $ARCH"; \
-            wget -q https://developer.download.nvidia.com/compute/cuda/repos/${UBUNTU_CODENAME}/${ARCH}/cuda-keyring_1.1-1_all.deb -O /tmp/cuda-keyring.deb; \
-            dpkg -i /tmp/cuda-keyring.deb; \
-            rm /tmp/cuda-keyring.deb; \
             sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
             sh -c "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
             nvcc --version; \
