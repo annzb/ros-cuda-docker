@@ -85,7 +85,7 @@ RUN set -eu; \
         gnupg \
         software-properties-common \
         build-essential \
-        cmake $OUTPUT_REDIRECT"
+        cmake libxnvctrl0 $OUTPUT_REDIRECT"
 
         
 # Install CUDA
