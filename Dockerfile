@@ -72,10 +72,10 @@ RUN set -eu; \
             echo "$1" >> /etc/apt/sources.list; \
         fi; \
     }; \
-    add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME} main restricted universe multiverse"; \
-    add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-updates main restricted universe multiverse"; \
-    add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-backports main restricted universe multiverse"; \
-    add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
+    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME} main restricted universe multiverse"; \
+    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-updates main restricted universe multiverse"; \
+    # add_source "deb $UBUNTU_MIRROR ${UBUNTU_CODENAME}-backports main restricted universe multiverse"; \
+    # add_source "deb $SECURITY_MIRROR ${UBUNTU_CODENAME}-security main restricted universe multiverse"; \
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt upgrade -y $APT_FLAGS $OUTPUT_REDIRECT"; \
     sh -c "apt install --no-install-recommends -y $APT_FLAGS apt-utils $OUTPUT_REDIRECT"; \
@@ -94,7 +94,8 @@ RUN if [ -n "$CUDA_VERSION" ]; then \
         . $BUILD_VARIABLES; \
         if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
             echo "Installing CUDA $CUDA_VERSION_X_Y on architecture $ARCH"; \
-            sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
+            sh -c "apt update -o Acquire::http::No-Cache=True $APT_FLAGS $OUTPUT_REDIRECT"; \
+            sh -c "apt clean $APT_FLAGS $OUTPUT_REDIRECT"; \
             sh -c "apt install --no-install-recommends -y $APT_FLAGS nvidia-settings libxnvctrl0 $OUTPUT_REDIRECT"; \
             sh -c "apt install --no-install-recommends -y $APT_FLAGS cuda-toolkit-${CUDA_VERSION_X_Y} $OUTPUT_REDIRECT"; \
             nvcc --version; \
