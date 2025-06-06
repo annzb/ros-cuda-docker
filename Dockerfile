@@ -114,7 +114,7 @@ RUN if [ -n "$ROS_DISTRO" ]; then \
             echo "deb [signed-by=/usr/share/keyrings/ros.gpg] http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main" > /etc/apt/sources.list.d/ros2-latest.list ;; \
     esac; \
     sh -c "apt update $APT_FLAGS $OUTPUT_REDIRECT"; \
-    sh -c "apt install --no-install-recommends -y $APT_FLAGS \
+    sh -c "apt -o Acquire::Retries=3 install --no-install-recommends -y $APT_FLAGS \
         ros-${ROS_DISTRO}-desktop-full \
         python3-rosdep \
         python3-colcon-common-extensions $OUTPUT_REDIRECT"; \
